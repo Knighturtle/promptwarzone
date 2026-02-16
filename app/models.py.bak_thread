@@ -1,0 +1,22 @@
+﻿from __future__ import annotations
+
+from datetime import datetime
+from typing import Optional
+from sqlmodel import SQLModel, Field
+
+class Post(SQLModel, table=True):
+    id: Optional[int] = Field(default=None, primary_key=True)
+
+    # 投稿者名
+    name: str = Field(index=True, max_length=50)
+
+    # 本文
+    content: str = Field(max_length=2000)
+
+    # AI返信かどうか
+    is_ai: bool = Field(default=False, index=True)
+
+    # どの投稿への返信か（AI返信用）
+    reply_to_id: Optional[int] = Field(default=None, index=True)
+
+    created_at: datetime = Field(default_factory=datetime.utcnow, index=True)

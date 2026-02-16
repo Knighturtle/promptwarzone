@@ -1,0 +1,129 @@
+:root {
+    font-family: system-ui, sans-serif;
+}
+
+body {
+    margin: 0;
+    background: #f6f6f6;
+    color: #111;
+}
+
+a {
+    color: #0645ad;
+    text-decoration: none;
+}
+
+a:hover {
+    text-decoration: underline;
+}
+
+.topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 14px;
+    background: #fff;
+    border-bottom: 1px solid #ddd;
+    position: sticky;
+    top: 0;
+}
+
+.brand {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    font-weight: 700;
+    color: #111;
+}
+
+.logo {
+    width: 24px;
+    height: 24px;
+    border-radius: 4px;
+}
+
+.nav a {
+    margin-left: 10px;
+}
+
+.container {
+    max-width: 980px;
+    margin: 16px auto;
+    padding: 0 12px;
+}
+
+.card {
+    background: #fff;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 12px;
+    margin-bottom: 12px;
+}
+
+.thread-title {
+    font-weight: 700;
+}
+
+.meta {
+    color: #666;
+    font-size: 12px;
+}
+
+.post {
+    padding: 10px 0;
+    border-bottom: 1px dashed #ddd;
+}
+
+.post:last-child {
+    border-bottom: none;
+}
+
+.post .name {
+    font-weight: 700;
+    margin-right: 8px;
+}
+
+.post .id {
+    color: #888;
+    font-size: 12px;
+    margin-left: 6px;
+}
+
+.post .body {
+    white-space: pre-wrap;
+    margin-top: 6px;
+    line-height: 1.5;
+}
+
+input,
+textarea,
+select,
+button {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    box-sizing: border-box;
+    font-size: 14px;
+}
+
+button {
+    cursor: pointer;
+    font-weight: 700;
+}
+
+.row {
+    display: flex;
+    gap: 10px;
+}
+
+.row>* {
+    flex: 1;
+}
+
+.footer {
+    text-align: center;
+    color: #777;
+    font-size: 12px;
+    padding: 18px 0;
+}

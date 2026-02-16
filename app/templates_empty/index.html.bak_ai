@@ -1,0 +1,37 @@
+﻿{% extends "base.html" %}
+{% block content %}
+
+<section class="card">
+  <h2 class="h2">新規投稿</h2>
+  <form class="form" method="post" action="/new">
+    <label class="label">Name</label>
+    <input class="input" name="name" placeholder="Anonymous" maxlength="50"/>
+
+    <label class="label">Content</label>
+    <textarea class="textarea" name="content" placeholder="Write something..." maxlength="2000" required></textarea>
+
+    <button class="btn" type="submit">Post</button>
+  </form>
+</section>
+
+<section class="card">
+  <h2 class="h2">投稿一覧（{{ posts|length }}）</h2>
+
+  {% if posts|length == 0 %}
+    <p class="muted">まだ投稿がありません。</p>
+  {% endif %}
+
+  <div class="posts">
+    {% for p in posts %}
+      <article class="post">
+        <div class="post-head">
+          <div class="name">{{ p.name }}</div>
+          <div class="time">{{ p.created_at.strftime("%Y-%m-%d %H:%M:%S") }} UTC</div>
+        </div>
+        <div class="content">{{ p.content }}</div>
+      </article>
+    {% endfor %}
+  </div>
+</section>
+
+{% endblock %}

@@ -1,0 +1,29 @@
+﻿{% extends "base.html" %}
+{% block content %}
+<h2>{{board.name}} æ¿</h2>
+<p class="meta">åç„¡ã—ãƒ‡ãƒ•ã‚©: {{board.default_name}} / ãƒ¡ãƒ¼ãƒ«æ¬„ã« <b>sage</b> ã§ä¸Šã’ãªã„</p>
+
+<div class="box">
+    <h3>ã‚¹ãƒ¬ç«‹ã¦</h3>
+    <form method="post" action="/b/{{board.id}}/new">
+        <label>ã‚¿ã‚¤ãƒˆãƒ«</label>
+        <input name="title" required>
+        <label>åå‰</label>
+        <input name="name" placeholder="{{board.default_name}}">
+        <label>ãƒ¡ãƒ¼ãƒ«</label>
+        <input name="mail" placeholder="sage">
+        <label>æœ¬æ–‡</label>
+        <input name="body" required>
+        <button type="submit">ã‚¹ãƒ¬ç«‹ã¦</button>
+    </form>
+</div>
+
+<h3>ã‚¹ãƒ¬ä¸€è¦§</h3>
+<ol>
+    {% for t in threads %}
+    <li><a href="/t/{{t.id}}">{{t.title}}</a> <span class="meta">last: {{t.last_bumped_at}}</span></li>
+    {% endfor %}
+</ol>
+{% endblock %}
+
+

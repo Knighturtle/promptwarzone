@@ -1,0 +1,214 @@
+﻿import os
+from fastapi import FastAPI, Request, Form, HTTPException
+from fastapi.responses import RedirectResponse, HTMLResponse, PlainTextResponse
+from fastapi.staticfiles import StaticFiles
+from fastapi.templating import Jinja2Templates
+from sqlmodel import select
+
+from .db import init_db, get_session
+from .models import Post
+from .ai.multi_reply import generate_multi_replies
+# from .ai.reply import generate_ai_reply  # 単発AIが欲しい場合用 (optional)
+
+app = FastAPI()
+
+BASE_DIR = os.path.dirname(__file__)
+templates = Jinja2Templates(directory=os.path.join(BASE_DIR, "templates"))
+app.mount("/static", StaticFiles(directory=os.path.join(BASE_DIR, "static")), name="static")
+
+def _check_lang(lang: str) -> str:
+    lang = (lang or "").lower().strip()
+    if lang not in ("jp", "en"):
+        raise HTTPException(status_code=404, detail="lang not found")
+    return lang
+
+@app.on_event("startup")
+def on_startup():
+    init_db()
+    print("STARTUP: DB initialized")
+
+@app.get("/healthz", response_class=PlainTextResponse)
+def healthz():
+    with get_session() as session:
+        cnt = len(session.exec(select(Post)).all())
+    return f"ok posts={cnt}\n"
+
+def build_tree(posts):
+    nodes = {p.id: {"post": p, "children": []} for p in posts if p.id is not None}
+    roots = []
+    for p in posts:
+        node = nodes.get(p.id)
+        if not node:
+            continue
+        if p.reply_to_id and p.reply_to_id in nodes:
+            nodes[p.reply_to_id]["children"].append(node)
+        else:
+            roots.append(node)
+
+    def sort_children(n):
+        n["children"].sort(key=lambda x: x["post"].created_at)
+        for c in n["children"]:
+            sort_children(c)
+
+    roots.sort(key=lambda x: x["post"].created_at)
+    for r in roots:
+        sort_children(r)
+    return roots
+
+@app.get("/", response_class=HTMLResponse)
+def root_redirect(request: Request):
+    # デフォルトは日本語板へ
+    return RedirectResponse(url="/jp", status_code=302)
+
+@app.get("/{lang}", response_class=HTMLResponse)
+def thread_list(request: Request, lang: str):
+    lang = _check_lang(lang)
+    with get_session() as session:
+        posts = session.exec(
+            select(Post).where(Post.language == lang).order_by(Post.created_at.asc())
+        ).all()
+
+    by_thread = {}
+    for p in posts:
+        tid = p.thread_id or p.id
+        if tid is None:
+            continue
+        item = by_thread.get(tid)
+        if item is None:
+            by_thread[tid] = {
+                "thread_id": tid,
+                "preview": (p.content or "")[:60].replace("\n", " "),
+                "replies": 0,
+                "last_at": p.created_at,
+                "name": p.name,
+            }
+        else:
+            item["replies"] += 1
+            if p.created_at > item["last_at"]:
+                item["last_at"] = p.created_at
+
+    threads = sorted(by_thread.values(), key=lambda x: x["last_at"], reverse=True)
+
+    title = "JP Board" if lang == "jp" else "EN Board"
+    return templates.TemplateResponse(
+        "index.html",
+        {"request": request, "title": title, "lang": lang, "threads": threads}
+    )
+
+@app.get("/{lang}/t/{thread_id}", response_class=HTMLResponse)
+def thread_detail(request: Request, lang: str, thread_id: int):
+    lang = _check_lang(lang)
+    with get_session() as session:
+        posts = session.exec(
+            select(Post)
+            .where(Post.language == lang)
+            .where(Post.thread_id == thread_id)
+            .order_by(Post.created_at.asc())
+        ).all()
+
+        if not posts:
+            root = session.exec(
+                select(Post).where(Post.language == lang).where(Post.id == thread_id)
+            ).first()
+            if root:
+                posts = [root]
+
+    if not posts:
+        raise HTTPException(status_code=404, detail="Thread not found")
+
+    tree = build_tree(posts)
+    return templates.TemplateResponse(
+        "thread.html",
+        {"request": request, "title": f"Thread #{thread_id}", "lang": lang, "thread_id": thread_id, "tree": tree}
+    )
+
+@app.post("/new")
+def new_post(
+    lang: str = Form("jp"),
+    name: str = Form("Anonymous"),
+    content: str = Form(...),
+    ai_multi: str = Form(""),   # 複数名無しAI
+    ai: str = Form(""),         # 単発AI（任意）
+    reply_to_id: str = Form(""),
+):
+    lang = _check_lang(lang)
+    name = (name or "").strip()[:50]
+    content = (content or "").strip()[:2000]
+    if not content:
+        return RedirectResponse(url=f"/{lang}", status_code=303)
+
+    parent_id = None
+    reply_to_id = (reply_to_id or "").strip()
+    if reply_to_id.isdigit():
+        parent_id = int(reply_to_id)
+
+    with get_session() as session:
+        thread_id = None
+        if parent_id is not None:
+            parent = session.exec(select(Post).where(Post.language == lang).where(Post.id == parent_id)).first()
+            if parent:
+                thread_id = parent.thread_id or parent.id
+            else:
+                thread_id = None
+                parent_id = None
+
+        user_post = Post(
+            language=lang,
+            name=name or "Anonymous",
+            content=content,
+            is_ai=False,
+            reply_to_id=parent_id,
+            thread_id=thread_id,
+        )
+        session.add(user_post)
+        session.commit()
+        session.refresh(user_post)
+
+        # ルート投稿なら thread_id = 自分のid
+        if parent_id is None:
+            user_post.thread_id = user_post.id
+            session.add(user_post)
+            session.commit()
+
+        tid = user_post.thread_id or user_post.id
+
+        # 文脈（同スレ直近）
+        recent = session.exec(
+            select(Post)
+            .where(Post.language == lang)
+            .where(Post.thread_id == tid)
+            .order_by(Post.created_at.desc())
+        ).all()[:8]
+        recent = list(reversed(recent))
+        context = "\n".join([f"{('AI-' if p.is_ai else '')}{p.name}: {p.content}" for p in recent if p.content])[:1200]
+
+        if ai_multi == "1":
+            replies = generate_multi_replies(content, lang=lang, context=context)
+            for r in replies:
+                session.add(Post(
+                    language=lang,
+                    name=r["name"],
+                    content=r["content"],
+                    is_ai=True,
+                    reply_to_id=user_post.id,
+                    thread_id=tid,
+                ))
+            session.commit()
+        elif ai == "1":
+            # ai_text = generate_ai_reply(content)
+            # fallback if generate_ai_reply is missing or use multi_reply with single
+            replies = generate_multi_replies(content, lang=lang, context=context)
+            if replies:
+                 r = replies[0] 
+                 session.add(Post(
+                    language=lang,
+                    name="Assistant",
+                    content=r["content"],
+                    is_ai=True,
+                    reply_to_id=user_post.id,
+                    thread_id=tid,
+                ))
+            session.commit()
+
+    return RedirectResponse(url=f"/{lang}/t/{tid}", status_code=303)
+# trigger reload

@@ -1,0 +1,20 @@
+﻿import random
+
+def generate_ai_reply(user_text: str) -> str:
+    """
+    いまは「仮AI」: 外部API不要で動く。
+    次のフェーズで OpenAI / Ollama / VOICEVOX 等に差し替え可能。
+    """
+    user_text = (user_text or "").strip()
+    if not user_text:
+        return "（空の投稿なので返信できません）"
+
+    # 超シンプルなルールベース返信（デモ用）
+    templates = [
+        "了解。要点は「{x}」だね。次は具体例を1つ書いてみて。",
+        "それ面白い。『{x}』について、目的は何？",
+        "OK。まず結論：{x}。次に根拠を2つ出して。",
+        "いいね。『{x}』をもう少し詳しく。いつ・どこで・なぜ？",
+    ]
+    x = user_text[:40].replace("\n", " ")
+    return random.choice(templates).format(x=x)

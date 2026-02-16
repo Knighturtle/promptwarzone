@@ -1,0 +1,89 @@
+﻿{% extends "base.html" %}
+{% block content %}
+
+<section class="card">
+  <div class="row">
+    <h2 class="h2">スレッド #{{ thread_id }}</h2>
+    <a class="muted" href="/">← スレ一覧へ</a>
+  </div>
+</section>
+
+<section class="card">
+  <h2 class="h2">返信する</h2>
+  <form class="form" method="post" action="/new">
+    <input type="hidden" name="reply_to_id" value="{{ thread_id }}"/>
+
+    <label class="label">Name</label>
+    <input class="input" name="name" placeholder="Anonymous" maxlength="50"/>
+
+    <label class="label">Reply</label>
+    <textarea class="textarea" name="content" placeholder="Reply..." maxlength="2000" required></textarea>
+
+    <label class="check">
+      <input type="checkbox" name="ai" value="1" />
+      <span>AI返信を付ける（Ollama）</span>
+    </label>
+
+    <button class="btn" type="submit">Send Reply</button>
+  </form>
+</section>
+
+<section class="card">
+  <h2 class="h2">ツリー</h2>
+
+  {% macro render_node(node, depth=0) %}
+    {% set p = node.post %}
+    <article class="post {% if p.is_ai %}ai{% endif %}" style="margin-left: {{ depth * 18 }}px;">
+      <div class="post-head">
+        <div class="name">
+          {% if p.is_ai %}
+            🤖 AI <span class="muted">(reply to #{{ p.reply_to_id }})</span>
+          {% else %}
+            {{ p.name }}
+            {% if p.reply_to_id %}<span class="muted">(reply to #{{ p.reply_to_id }})</span>{% endif %}
+          {% endif %}
+          <span class="muted"> #{{ p.id }}</span>
+        </div>
+        <div class="time">{{ p.created_at.strftime("%Y-%m-%d %H:%M:%S") }} UTC</div>
+      </div>
+
+      <div class="content">{{ p.content }}</div>
+
+      <details class="replybox">
+        <summary class="replybtn">Reply to this</summary>
+        <form class="form" method="post" action="/new">
+          <input type="hidden" name="reply_to_id" value="{{ p.id }}"/>
+
+          <label class="label">Name</label>
+          <input class="input" name="name" placeholder="Anonymous" maxlength="50"/>
+
+          <label class="label">Reply</label>
+          <textarea class="textarea" name="content" placeholder="Reply..." maxlength="2000" required></textarea>
+
+          <label class="check">
+            <input type="checkbox" name="ai" value="1" />
+            <span>AI返信を付ける（Ollama）</span>
+          </label>
+
+          <button class="btn" type="submit">Send</button>
+        </form>
+      </details>
+    </article>
+
+    {% for child in node.children %}
+      {{ render_node(child, depth + 1) }}
+    {% endfor %}
+  {% endmacro %}
+
+  {% if tree|length == 0 %}
+    <p class="muted">このスレッドにはまだ投稿がありません。</p>
+  {% endif %}
+
+  <div class="tree">
+    {% for n in tree %}
+      {{ render_node(n, 0) }}
+    {% endfor %}
+  </div>
+</section>
+
+{% endblock %}

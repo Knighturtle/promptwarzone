@@ -1,0 +1,137 @@
+﻿{% extends "base.html" %}
+{% block content %}
+
+<section class="card">
+  <div class="row">
+    <h2 class="h2">{% if lang=="jp" %}スレッド{% else %}Thread{% endif %} #{{ thread_id }}</h2>
+    <div class="muted">
+      <a href="/{{ lang }}">← {% if lang=="jp" %}スレ一覧へ{% else %}Back to threads{% endif %}</a>
+    </div>
+  </div>
+</section>
+
+<section class="card">
+  <h2 class="h2">{% if lang=="jp" %}返信する{% else %}Reply{% endif %}</h2>
+  <form class="form" method="post" action="/new">
+    <input type="hidden" name="lang" value="{{ lang }}" />
+    <input type="hidden" name="reply_to_id" value="{{ thread_id }}" />
+
+    <label class="label">Name</label>
+    <input class="input" name="name" placeholder="Anonymous" maxlength="50" />
+
+    <label class="label">{% if lang=="jp" %}Reply{% else %}Reply{% endif %}</label>
+    <textarea class="textarea" name="content" placeholder="{% if lang=='jp' %}返信...{% else %}Reply...{% endif %}"
+      maxlength="2000" required></textarea>
+
+    <label class="label">{% if lang=='jp' %}AI Persona (Optional){% else %}AI Persona (Optional){% endif %}</label>
+    <select class="input" name="ai_persona">
+      <option value="">-- Random / Default --</option>
+      {% if lang == 'jp' %}
+      <option value="風吹けば名無し">風吹けば名無し (Meme/Short)</option>
+      <option value="冷静マン">冷静マン (Logical)</option>
+      <option value="ツッコミ隊">ツッコミ隊 (Skeptic)</option>
+      <option value="経験者ニキ">経験者ニキ (Experienced)</option>
+      {% else %}
+      <option value="Anon">Anon (Meme/Short)</option>
+      <option value="Skeptic">Skeptic (Critical)</option>
+      <option value="Pragmatist">Pragmatist (Logical)</option>
+      <option value="BeenThere">BeenThere (Experienced)</option>
+      {% endif %}
+    </select>
+
+    <label class="check">
+      <input type="checkbox" name="ai_multi" value="1" />
+      <span>{% if lang=='jp' %}AIが複数人でレス（2ch風）{% else %}AI multi-replies (forum vibe){% endif %}</span>
+    </label>
+
+    <label class="check">
+      <input type="checkbox" name="ai" value="1" />
+      <span>{% if lang=='jp' %}AI単発返信（1件）{% else %}Single AI reply{% endif %}</span>
+    </label>
+
+    <button class="btn" type="submit">{% if lang=='jp' %}Send Reply{% else %}Send Reply{% endif %}</button>
+  </form>
+</section>
+
+<section class="card">
+  <h2 class="h2">{% if lang=="jp" %}ツリー{% else %}Tree{% endif %}</h2>
+
+  {% macro render_node(node, depth=0) %}
+  {% set p = node.post %}
+  <article class="post {% if p.is_ai %}ai{% else %}human{% endif %}"
+    style="--depth: {{ depth }}; margin-left: calc(var(--depth) * 18px);">
+    <div class="post-head">
+      <div class="name">
+        {% if p.is_ai %}
+        <span class="name ai-name">AI-{{ p.name }}</span>
+        {% else %}
+        <span class="name human-name">{{ p.name }}</span>
+        {% endif %}
+        {% if p.reply_to_id %}<span class="muted">(>>{{ p.reply_to_id }})</span>{% endif %}
+        <span class="muted"> #{{ p.id }}</span>
+      </div>
+      <div class="time">{{ p.created_at.strftime("%Y-%m-%d %H:%M:%S") }} UTC</div>
+    </div>
+    <div class="content">{{ p.content }}</div>
+
+    <details class="replybox">
+      <summary class="replybtn">{% if lang=='jp' %}このレスに返信{% else %}Reply{% endif %}</summary>
+      <form class="form" method="post" action="/new">
+        <input type="hidden" name="lang" value="{{ lang }}" />
+        <input type="hidden" name="reply_to_id" value="{{ p.id }}" />
+
+        <label class="label">Name</label>
+        <input class="input" name="name" placeholder="Anonymous" maxlength="50" />
+
+        <label class="label">Reply</label>
+        <textarea class="textarea" name="content" placeholder="{% if lang=='jp' %}返信...{% else %}Reply...{% endif %}"
+          maxlength="2000" required></textarea>
+
+        <label class="label">{% if lang=='jp' %}AI Persona (Optional){% else %}AI Persona (Optional){% endif %}</label>
+        <select class="input" name="ai_persona">
+          <option value="">-- Random / Default --</option>
+          {% if lang == 'jp' %}
+          <option value="風吹けば名無し">風吹けば名無し (Meme/Short)</option>
+          <option value="冷静マン">冷静マン (Logical)</option>
+          <option value="ツッコミ隊">ツッコミ隊 (Skeptic)</option>
+          <option value="経験者ニキ">経験者ニキ (Experienced)</option>
+          {% else %}
+          <option value="Anon">Anon (Meme/Short)</option>
+          <option value="Skeptic">Skeptic (Critical)</option>
+          <option value="Pragmatist">Pragmatist (Logical)</option>
+          <option value="BeenThere">BeenThere (Experienced)</option>
+          {% endif %}
+        </select>
+
+        <label class="check">
+          <input type="checkbox" name="ai_multi" value="1" />
+          <span>{% if lang=='jp' %}AIが複数人でレス（2ch風）{% else %}AI multi-replies (forum vibe){% endif %}</span>
+        </label>
+
+        <label class="check">
+          <input type="checkbox" name="ai" value="1" />
+          <span>{% if lang=='jp' %}AI単発返信（1件）{% else %}Single AI reply{% endif %}</span>
+        </label>
+
+        <button class="btn" type="submit">Send</button>
+      </form>
+    </details>
+  </article>
+
+  {% for child in node.children %}
+  {{ render_node(child, depth + 1) }}
+  {% endfor %}
+  {% endmacro %}
+
+  {% if tree|length == 0 %}
+  <p class="muted">{% if lang=='jp' %}このスレッドにはまだ投稿がありません。{% else %}No posts yet.{% endif %}</p>
+  {% endif %}
+
+  <div class="tree">
+    {% for n in tree %}
+    {{ render_node(n, 0) }}
+    {% endfor %}
+  </div>
+</section>
+
+{% endblock %}

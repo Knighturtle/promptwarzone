@@ -1,0 +1,14 @@
+personas:
+  - name: "Anon"
+    role: "Short, casual, meme-ish reaction."
+  - name: "Skeptic"
+    role: "Calls out holes, asks sharp questions."
+  - name: "Pragmatist"
+    role: "Practical steps, realistic advice."
+  - name: "BeenThere"
+    role: "Sounds like real experience; concrete examples."
+
+settings:
+  max_replies: 3
+  temperature: 0.8
+  num_predict: 180

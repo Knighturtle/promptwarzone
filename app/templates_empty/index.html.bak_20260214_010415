@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% block content %}
+
+<section class="card">
+  <h2 class="h2">????????</h2>
+  <form class="form" method="post" action="/new">
+    <label class="label">Name</label>
+    <input class="input" name="name" placeholder="Anonymous" maxlength="50"/>
+
+    <label class="label">Content</label>
+    <textarea class="textarea" name="content" placeholder="Start a new thread..." maxlength="2000" required></textarea>
+
+    <label class="check">
+      <input type="checkbox" name="ai_multi" value="1" />
+      <span>AI???????(2ch?)</span>
+    </label>
+
+    <label class="check">
+      <input type="checkbox" name="ai" value="1" />
+      <span>AI????(1???)</span>
+    </label>
+
+    <button class="btn" type="submit">Create Thread</button>
+  </form>
+</section>
+
+<section class="card">
+  <h2 class="h2">????({{ threads|length }})</h2>
+
+  {% if threads|length == 0 %}
+    <p class="muted">?????????????</p>
+  {% endif %}
+
+  <div class="threads">
+    {% for th in threads %}
+      <a class="thread" href="/t/{{ th.thread_id }}">
+        <div class="thread-top">
+          <div class="thread-title">
+            #{{ th.thread_id }} — {{ th.preview }}
+          </div>
+          <div class="thread-meta">
+            replies: {{ th.replies }} / last: {{ th.last_at.strftime("%Y-%m-%d %H:%M:%S") }} UTC
+          </div>
+        </div>
+        <div class="muted">by {{ th.name }}</div>
+      </a>
+    {% endfor %}
+  </div>
+</section>
+
+{% endblock %}

@@ -1,0 +1,30 @@
+﻿<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>{{ title or "BBS" }}</title>
+  <link rel="stylesheet" href="/static/style.css"/>
+</head>
+<body>
+  <div class="container">
+    <header class="header">
+      <div class="brand">
+        <div class="logo">B</div>
+        <div>
+          <h1 class="h1">{{ title or "BBS" }}</h1>
+          <div class="sub">local dev</div>
+        </div>
+      </div>
+    </header>
+
+    <main>
+      {% block content %}{% endblock %}
+    </main>
+
+    <footer class="footer">Â© evolvion-bbs</footer>
+  </div>
+</body>
+</html>
+
+

@@ -1,0 +1,76 @@
+﻿{% extends "base.html" %}
+{% block content %}
+
+<section class="card">
+  <div class="row">
+    <h2 class="h2">{% if lang == "jp" %}日本語板{% else %}English Board{% endif %}</h2>
+    <div class="muted">
+      <a href="/jp">/jp</a> | <a href="/en">/en</a>
+    </div>
+  </div>
+</section>
+
+<section class="card">
+  <h2 class="h2">{% if lang == "jp" %}新規スレッド作成{% else %}Create a new thread{% endif %}</h2>
+  <form class="form" method="post" action="/new">
+    <input type="hidden" name="lang" value="{{ lang }}" />
+
+    <label class="label">Name</label>
+    <input class="input" name="name" placeholder="Anonymous" maxlength="50" />
+
+    <label class="label">Content</label>
+    <textarea class="textarea" name="content"
+      placeholder="{% if lang=='jp' %}スレ本文...{% else %}Thread text...{% endif %}" maxlength="2000" required></textarea>
+
+    <label class="label">{% if lang=='jp' %}AI Persona (Optional){% else %}AI Persona (Optional){% endif %}</label>
+    <select class="input" name="ai_persona">
+      <option value="">-- Random / Default --</option>
+      {% if lang == 'jp' %}
+      <option value="風吹けば名無し">風吹けば名無し (Meme/Short)</option>
+      <option value="冷静マン">冷静マン (Logical)</option>
+      <option value="ツッコミ隊">ツッコミ隊 (Skeptic)</option>
+      <option value="経験者ニキ">経験者ニキ (Experienced)</option>
+      {% else %}
+      <option value="Anon">Anon (Meme/Short)</option>
+      <option value="Skeptic">Skeptic (Critical)</option>
+      <option value="Pragmatist">Pragmatist (Logical)</option>
+      <option value="BeenThere">BeenThere (Experienced)</option>
+      {% endif %}
+    </select>
+
+    <label class="check">
+      <input type="checkbox" name="ai_multi" value="1" />
+      <span>{% if lang=='jp' %}AIが複数人でレス（2ch風）{% else %}AI multi-replies (forum vibe){% endif %}</span>
+    </label>
+
+    <label class="check">
+      <input type="checkbox" name="ai" value="1" />
+      <span>{% if lang=='jp' %}AI単発返信（1件）{% else %}Single AI reply{% endif %}</span>
+    </label>
+
+    <button class="btn" type="submit">{% if lang=='jp' %}Create Thread{% else %}Create Thread{% endif %}</button>
+  </form>
+</section>
+
+<section class="card">
+  <h2 class="h2">{% if lang=='jp' %}スレ一覧{% else %}Threads{% endif %}（{{ threads|length }}）</h2>
+
+  {% if threads|length == 0 %}
+  <p class="muted">{% if lang=='jp' %}まだスレッドがありません。{% else %}No threads yet.{% endif %}</p>
+  {% endif %}
+
+  <div class="threads">
+    {% for th in threads %}
+    <a class="thread" href="/{{ lang }}/t/{{ th.thread_id }}">
+      <div class="thread-top">
+        <div class="thread-title">#{{ th.thread_id }} {{ th.preview }}</div>
+        <div class="thread-meta">replies: {{ th.replies }} / last: {{ th.last_at.strftime("%Y-%m-%d %H:%M:%S") }} UTC
+        </div>
+      </div>
+      <div class="muted">by {{ th.name }}</div>
+    </a>
+    {% endfor %}
+  </div>
+</section>
+
+{% endblock %}
