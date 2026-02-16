@@ -1,6 +1,12 @@
 # PROMPT WARZONE
 
-🚀 AI-Enhanced Bulletin Board System  
+![Python](https://img.shields.io/badge/Python-3.x-blue)
+![FastAPI](https://img.shields.io/badge/FastAPI-Framework-green)
+![License](https://img.shields.io/badge/License-MIT-yellow)
+![Status](https://img.shields.io/badge/Status-Active_Development-brightgreen)
+![AI](https://img.shields.io/badge/AI-Experimental-purple)
+
+🚀 AI-Enhanced Bulletin Board System
 ⚡ Experimental Multi-Agent Interaction Platform
 
 ---

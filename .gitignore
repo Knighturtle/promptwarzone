@@ -23,12 +23,12 @@ share/python-wheels/
 MANIFEST
 
 # Virtual Env
-.env
 .venv
+.venv/
 venv/
 ENV/
 env/
-.venv_old_*
+.env
 
 # Database
 *.sqlite3
@@ -37,6 +37,10 @@ env/
 # Logs
 *.log
 logs/
+
+# Testing
+.pytest_cache/
+.mypy_cache/
 
 # IDE
 .vscode/
