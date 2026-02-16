@@ -29,6 +29,7 @@ venv/
 ENV/
 env/
 .env
+.venv_old_*
 
 # Database
 *.sqlite3
@@ -41,6 +42,9 @@ logs/
 # Testing
 .pytest_cache/
 .mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
 
 # IDE
 .vscode/
